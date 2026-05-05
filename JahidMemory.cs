@@ -10,26 +10,26 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GTCMemory
+namespace JahidMemory
 {
-    #region GTCMem
-    public class GTCMemory
+    #region JahidMem
+    public class JahidMemory
     {
         // Cache for addresses to avoid repeated lookups
         private Dictionary<string, UIntPtr> addressCache = new Dictionary<string, UIntPtr>();
-        
+
         // Fast write methods with optimized operation
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool WriteProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [MarshalAs(UnmanagedType.AsAny)] object lpBuffer, int dwSize, out IntPtr lpNumberOfBytesWritten);
-        
+
         [DllImport("kernel32.dll")]
-        private static extern void GetSystemInfo(out GTCMemory.SYSTEM_INFO lpSystemInfo);
+        private static extern void GetSystemInfo(out JahidMemory.SYSTEM_INFO lpSystemInfo);
         [DllImport("kernel32.dll")]
         public static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle, int dwProcessId);
         [DllImport("kernel32")]
         public static extern bool IsWow64Process(IntPtr hProcess, out bool lpSystemInfo);
         [DllImport("kernel32.dll")]
-        private static extern bool VirtualProtectEx(IntPtr hProcess, UIntPtr lpAddress, IntPtr dwSize, GTCMemory.MemoryProtection flNewProtect, out GTCMemory.MemoryProtection lpflOldProtect);
+        private static extern bool VirtualProtectEx(IntPtr hProcess, UIntPtr lpAddress, IntPtr dwSize, JahidMemory.MemoryProtection flNewProtect, out JahidMemory.MemoryProtection lpflOldProtect);
         [DllImport("kernel32.dll")]
         private static extern bool WriteProcessMemory(IntPtr hProcess, UIntPtr lpBaseAddress, byte[] lpBuffer, UIntPtr nSize, IntPtr lpNumberOfBytesWritten);
         [DllImport("kernel32.dll")]
@@ -37,22 +37,22 @@ namespace GTCMemory
         [DllImport("kernel32.dll")]
         public static extern int CloseHandle(IntPtr hObject);
         [DllImport("kernel32.dll", EntryPoint = "VirtualQueryEx")]
-        public static extern UIntPtr Native_VirtualQueryEx(IntPtr hProcess, UIntPtr lpAddress, out GTCMemory.MEMORY_BASIC_INFORMATION64 lpBuffer, UIntPtr dwLength);
+        public static extern UIntPtr Native_VirtualQueryEx(IntPtr hProcess, UIntPtr lpAddress, out JahidMemory.MEMORY_BASIC_INFORMATION64 lpBuffer, UIntPtr dwLength);
         [DllImport("kernel32.dll", EntryPoint = "VirtualQueryEx")]
-        public static extern UIntPtr Native_VirtualQueryEx(IntPtr hProcess, UIntPtr lpAddress, out GTCMemory.MEMORY_BASIC_INFORMATION32 lpBuffer, UIntPtr dwLength);
+        public static extern UIntPtr Native_VirtualQueryEx(IntPtr hProcess, UIntPtr lpAddress, out JahidMemory.MEMORY_BASIC_INFORMATION32 lpBuffer, UIntPtr dwLength);
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
         private static extern uint GetPrivateProfileString(string lpAppName, string lpKeyName, string lpDefault, StringBuilder lpReturnedString, uint nSize, string lpFileName);
         [DllImport("kernel32.dll")]
         private static extern bool ReadProcessMemory(IntPtr hProcess, UIntPtr lpBaseAddress, [Out] IntPtr lpBuffer, UIntPtr nSize, out ulong lpNumberOfBytesRead);
-        
+
         // WARNING: Extreme speed optimization - no safety checks!
         [DllImport("kernel32.dll", SetLastError = true, EntryPoint = "WriteProcessMemory")]
         private static extern bool WriteProcessMemoryRaw(IntPtr hProcess, long lpBaseAddress, byte[] buffer, int size, out IntPtr lpNumberOfBytesWritten);
-        
+
         // Direct memory raw pointer operations (no safety, max speed)
         public bool DirectWriteMemory(long addressLong, int value)
         {
-            try 
+            try
             {
                 byte[] buffer = BitConverter.GetBytes(value);
                 IntPtr bytesWritten;
@@ -63,7 +63,7 @@ namespace GTCMemory
                 return false;
             }
         }
-        
+
         public int DirectReadMemory(long addressLong)
         {
             try
@@ -81,7 +81,7 @@ namespace GTCMemory
                 return 0;
             }
         }
-        
+
         // Fast direct access for pre-cached addresses
         private Dictionary<UIntPtr, byte[]> bufferCache = new Dictionary<UIntPtr, byte[]>();
 
@@ -89,7 +89,7 @@ namespace GTCMemory
         public Dictionary<UIntPtr, int> BatchReadInts(IEnumerable<UIntPtr> addresses)
         {
             Dictionary<UIntPtr, int> results = new Dictionary<UIntPtr, int>();
-            
+
             foreach (var address in addresses)
             {
                 byte[] buffer = new byte[4];
@@ -98,15 +98,15 @@ namespace GTCMemory
                     results[address] = BitConverter.ToInt32(buffer, 0);
                 }
             }
-            
+
             return results;
         }
-        
+
         // Write multiple memory locations in one logical operation
         public bool BatchWriteInts(Dictionary<UIntPtr, int> values)
         {
             bool allSuccess = true;
-            
+
             foreach (var kvp in values)
             {
                 byte[] buffer = BitConverter.GetBytes(kvp.Value);
@@ -115,10 +115,10 @@ namespace GTCMemory
                     allSuccess = false;
                 }
             }
-            
+
             return allSuccess;
         }
-        
+
         // Preallocate buffers for commonly accessed memory regions
         public void PreallocateBuffers(IEnumerable<UIntPtr> addresses, int bufferSize = 4)
         {
@@ -130,7 +130,7 @@ namespace GTCMemory
                 }
             }
         }
-        
+
         // Ultra-fast read using preallocated buffers
         public int FastReadIntBuffered(UIntPtr address)
         {
@@ -138,7 +138,7 @@ namespace GTCMemory
             {
                 bufferCache[address] = new byte[4];
             }
-            
+
             byte[] buffer = bufferCache[address];
             if (ReadProcessMemory(pHandle, address, buffer, (UIntPtr)4, IntPtr.Zero))
             {
@@ -146,7 +146,7 @@ namespace GTCMemory
             }
             return 0;
         }
-        
+
         // Ultra-fast write using direct buffer manipulation
         public bool FastWriteIntBuffered(UIntPtr address, int value)
         {
@@ -154,12 +154,12 @@ namespace GTCMemory
             {
                 bufferCache[address] = new byte[4];
             }
-            
+
             byte[] buffer = bufferCache[address];
             BitConverter.GetBytes(value).CopyTo(buffer, 0);
             return WriteProcessMemory(pHandle, address, buffer, (UIntPtr)4, IntPtr.Zero);
         }
-        
+
         // Fast read method for integers (4 bytes)
         public int FastReadInt(UIntPtr address)
         {
@@ -168,40 +168,40 @@ namespace GTCMemory
                 return 0;
             return BitConverter.ToInt32(buffer, 0);
         }
-        
+
         // Fast read method with caching
         public int FastReadInt(string addressStr)
         {
             UIntPtr address = GetCachedAddress(addressStr);
             return FastReadInt(address);
         }
-        
+
         // Fast write method for integers with direct memory access
         public bool FastWriteInt(UIntPtr address, int value)
         {
             byte[] buffer = BitConverter.GetBytes(value);
             return WriteProcessMemory(pHandle, address, buffer, (UIntPtr)4, IntPtr.Zero);
         }
-        
+
         // Fast write method with caching
         public bool FastWriteInt(string addressStr, int value)
         {
             UIntPtr address = GetCachedAddress(addressStr);
             return FastWriteInt(address, value);
         }
-        
+
         // Optimized method to swap int values between two addresses
         public bool SwapInts(UIntPtr address1, UIntPtr address2)
         {
             int value1 = FastReadInt(address1);
             int value2 = FastReadInt(address2);
-            
+
             bool success1 = FastWriteInt(address1, value2);
             bool success2 = FastWriteInt(address2, value1);
-            
+
             return success1 && success2;
         }
-        
+
         // Swap int values with caching
         public bool SwapInts(string address1Str, string address2Str)
         {
@@ -209,7 +209,7 @@ namespace GTCMemory
             UIntPtr address2 = GetCachedAddress(address2Str);
             return SwapInts(address1, address2);
         }
-        
+
         // Get address with caching for faster lookups
         public UIntPtr GetCachedAddress(string addressStr)
         {
@@ -217,12 +217,12 @@ namespace GTCMemory
             {
                 return cachedAddress;
             }
-            
+
             UIntPtr address = GetCode(addressStr, "", 8);
             addressCache[addressStr] = address;
             return address;
         }
-        
+
         // Fast read method for byte arrays with minimal overhead
         public byte[] FastReadBytes(UIntPtr address, int length)
         {
@@ -231,23 +231,23 @@ namespace GTCMemory
                 return null;
             return buffer;
         }
-        
+
         // Fast write method for byte arrays with minimal overhead
         public bool FastWriteBytes(UIntPtr address, byte[] buffer)
         {
             return WriteProcessMemory(pHandle, address, buffer, (UIntPtr)buffer.Length, IntPtr.Zero);
         }
-        
+
         // Clear the address cache
         public void ClearAddressCache()
         {
             addressCache.Clear();
         }
-        
+
         // Optimized AoBScan2 that returns cached results if available
         private List<long> cachedScanResults = null;
         private string lastScanPattern = null;
-        
+
         public async Task<IEnumerable<long>> OptimizedAoBScan(string search, bool writable = false, bool executable = false)
         {
             // Return cached results if pattern matches
@@ -255,17 +255,17 @@ namespace GTCMemory
             {
                 return cachedScanResults;
             }
-            
+
             // Do the scan
             var results = await AoBScan2(search, writable, executable);
-            
+
             // Cache the results
             cachedScanResults = results.ToList();
             lastScanPattern = search;
-            
+
             return cachedScanResults;
         }
-        
+
         // Fast direct memory write for specific types
         public bool FastWriteMemory<T>(string addressStr, T value) where T : struct
         {
@@ -273,7 +273,7 @@ namespace GTCMemory
             {
                 UIntPtr address = GetCachedAddress(addressStr);
                 int size = Marshal.SizeOf(typeof(T));
-                
+
                 // Create a buffer and copy the structure data to it
                 byte[] buffer = new byte[size];
                 GCHandle handle = GCHandle.Alloc(value, GCHandleType.Pinned);
@@ -286,7 +286,7 @@ namespace GTCMemory
                     if (handle.IsAllocated)
                         handle.Free();
                 }
-                
+
                 // Write the buffer to process memory
                 return WriteProcessMemory(pHandle, address, buffer, (UIntPtr)size, IntPtr.Zero);
             }
@@ -296,23 +296,21 @@ namespace GTCMemory
                 return false;
             }
         }
-        
+
         // Optimized version of AhReadMeFucker with caching
         public byte[] FastReadMem(string code, long length)
         {
             UIntPtr address = GetCachedAddress(code);
             return FastReadBytes(address, (int)length);
         }
-        
-        // ... existing code ...
-        
+
         public string LoadCode(string name, string file)
         {
             StringBuilder stringBuilder = new StringBuilder(1024);
             bool flag = file != "";
             if (flag)
             {
-                uint privateProfileString = GTCMemory.GetPrivateProfileString("codes", name, "", stringBuilder, (uint)stringBuilder.Capacity, file);
+                uint privateProfileString = JahidMemory.GetPrivateProfileString("codes", name, "", stringBuilder, (uint)stringBuilder.Capacity, file);
             }
             else
             {
@@ -320,7 +318,7 @@ namespace GTCMemory
             }
             return stringBuilder.ToString();
         }
-        // ... rest of the existing code ...
+
         public Task<IEnumerable<long>> AoBScan(long start, long end, string search, bool readable, bool writable, bool executable, string file = "")
         {
             return Task.Run<IEnumerable<long>>(delegate ()
@@ -369,8 +367,8 @@ namespace GTCMemory
                 {
                     aobPattern[j] = ((byte)(Convert.ToByte(array[j], 16) & mask[j]));
                 }
-                GTCMemory.SYSTEM_INFO system_INFO = default(GTCMemory.SYSTEM_INFO);
-                GTCMemory.GetSystemInfo(out system_INFO);
+                JahidMemory.SYSTEM_INFO system_INFO = default(JahidMemory.SYSTEM_INFO);
+                JahidMemory.GetSystemInfo(out system_INFO);
                 UIntPtr minimumApplicationAddress = system_INFO.minimumApplicationAddress;
                 UIntPtr maximumApplicationAddress = system_INFO.maximumApplicationAddress;
                 bool flag4 = start < (long)minimumApplicationAddress.ToUInt64();
@@ -394,7 +392,7 @@ namespace GTCMemory
                     ")"
                 }));
                 UIntPtr uintPtr = new UIntPtr((ulong)start);
-                GTCMemory.MEMORY_BASIC_INFORMATION memory_BASIC_INFORMATION = default(GTCMemory.MEMORY_BASIC_INFORMATION);
+                JahidMemory.MEMORY_BASIC_INFORMATION memory_BASIC_INFORMATION = default(JahidMemory.MEMORY_BASIC_INFORMATION);
                 while (this.VirtualQueryEx(this.pHandle, uintPtr, out memory_BASIC_INFORMATION).ToUInt64() != 0UL && uintPtr.ToUInt64() < (ulong)end && uintPtr.ToUInt64() + (ulong)memory_BASIC_INFORMATION.RegionSize > uintPtr.ToUInt64())
                 {
                     bool flag6 = memory_BASIC_INFORMATION.State == 4096U;
@@ -481,7 +479,7 @@ namespace GTCMemory
             bool flag = false;
             if (!flag)
             {
-                GTCMemory.CloseHandle(this.pHandle);
+                JahidMemory.CloseHandle(this.pHandle);
                 this.theProc = null;
             }
         }
@@ -506,7 +504,7 @@ namespace GTCMemory
             }
             IntPtr intPtr = Marshal.AllocHGlobal((int)item.RegionSize);
             ulong num;
-            GTCMemory.ReadProcessMemory(this.pHandle, item.CurrentBaseAddress, intPtr, (UIntPtr)((ulong)item.RegionSize), out num);
+            JahidMemory.ReadProcessMemory(this.pHandle, item.CurrentBaseAddress, intPtr, (UIntPtr)((ulong)item.RegionSize), out num);
             int num2 = 0 - aobPattern.Length;
             List<long> list = new List<long>();
             do
@@ -560,14 +558,14 @@ namespace GTCMemory
             }
             return result;
         }
-        public UIntPtr VirtualQueryEx(IntPtr hProcess, UIntPtr lpAddress, out GTCMemory.MEMORY_BASIC_INFORMATION lpBuffer)
+        public UIntPtr VirtualQueryEx(IntPtr hProcess, UIntPtr lpAddress, out JahidMemory.MEMORY_BASIC_INFORMATION lpBuffer)
         {
             bool flag = this.Is64Bit || IntPtr.Size == 8;
             UIntPtr result;
             if (flag)
             {
-                GTCMemory.MEMORY_BASIC_INFORMATION64 memory_BASIC_INFORMATION = default(GTCMemory.MEMORY_BASIC_INFORMATION64);
-                UIntPtr uintPtr = GTCMemory.Native_VirtualQueryEx(hProcess, lpAddress, out memory_BASIC_INFORMATION, new UIntPtr((uint)Marshal.SizeOf(memory_BASIC_INFORMATION)));
+                JahidMemory.MEMORY_BASIC_INFORMATION64 memory_BASIC_INFORMATION = default(JahidMemory.MEMORY_BASIC_INFORMATION64);
+                UIntPtr uintPtr = JahidMemory.Native_VirtualQueryEx(hProcess, lpAddress, out memory_BASIC_INFORMATION, new UIntPtr((uint)Marshal.SizeOf(memory_BASIC_INFORMATION)));
                 lpBuffer.BaseAddress = memory_BASIC_INFORMATION.BaseAddress;
                 lpBuffer.AllocationBase = memory_BASIC_INFORMATION.AllocationBase;
                 lpBuffer.AllocationProtect = memory_BASIC_INFORMATION.AllocationProtect;
@@ -579,8 +577,8 @@ namespace GTCMemory
             }
             else
             {
-                GTCMemory.MEMORY_BASIC_INFORMATION32 memory_BASIC_INFORMATION2 = default(GTCMemory.MEMORY_BASIC_INFORMATION32);
-                UIntPtr uintPtr = GTCMemory.Native_VirtualQueryEx(hProcess, lpAddress, out memory_BASIC_INFORMATION2, new UIntPtr((uint)Marshal.SizeOf(memory_BASIC_INFORMATION2)));
+                JahidMemory.MEMORY_BASIC_INFORMATION32 memory_BASIC_INFORMATION2 = default(JahidMemory.MEMORY_BASIC_INFORMATION32);
+                UIntPtr uintPtr = JahidMemory.Native_VirtualQueryEx(hProcess, lpAddress, out memory_BASIC_INFORMATION2, new UIntPtr((uint)Marshal.SizeOf(memory_BASIC_INFORMATION2)));
                 lpBuffer.BaseAddress = memory_BASIC_INFORMATION2.BaseAddress;
                 lpBuffer.AllocationBase = memory_BASIC_INFORMATION2.AllocationBase;
                 lpBuffer.AllocationProtect = memory_BASIC_INFORMATION2.AllocationProtect;
@@ -676,7 +674,7 @@ namespace GTCMemory
                         bool flag9 = text.Contains("base") || text.Contains("main");
                         if (flag9)
                         {
-                            GTCMemory.ReadProcessMemory(this.pHandle, (UIntPtr)((ulong)((long)this.mainModule.BaseAddress + array4[0])), array, (UIntPtr)((ulong)((long)size)), IntPtr.Zero);
+                            JahidMemory.ReadProcessMemory(this.pHandle, (UIntPtr)((ulong)((long)this.mainModule.BaseAddress + array4[0])), array, (UIntPtr)((ulong)((long)size)), IntPtr.Zero);
                         }
                         else
                         {
@@ -705,11 +703,11 @@ namespace GTCMemory
                                         Debug.WriteLine("Modules: " + string.Join<KeyValuePair<string, IntPtr>>(",", this.modules));
                                     }
                                 }
-                                GTCMemory.ReadProcessMemory(this.pHandle, (UIntPtr)((ulong)((long)value + array4[0])), array, (UIntPtr)((ulong)((long)size)), IntPtr.Zero);
+                                JahidMemory.ReadProcessMemory(this.pHandle, (UIntPtr)((ulong)((long)value + array4[0])), array, (UIntPtr)((ulong)((long)size)), IntPtr.Zero);
                             }
                             else
                             {
-                                GTCMemory.ReadProcessMemory(this.pHandle, (UIntPtr)((ulong)array4[0]), array, (UIntPtr)((ulong)((long)size)), IntPtr.Zero);
+                                JahidMemory.ReadProcessMemory(this.pHandle, (UIntPtr)((ulong)array4[0]), array, (UIntPtr)((ulong)((long)size)), IntPtr.Zero);
                             }
                         }
                         long num2 = BitConverter.ToInt64(array, 0);
@@ -717,639 +715,39 @@ namespace GTCMemory
                         for (int j = 1; j < array4.Length; j++)
                         {
                             uintPtr = new UIntPtr(Convert.ToUInt64(num2 + array4[j]));
-                            GTCMemory.ReadProcessMemory(this.pHandle, uintPtr, array, (UIntPtr)((ulong)((long)size)), IntPtr.Zero);
+                            JahidMemory.ReadProcessMemory(this.pHandle, uintPtr, array, (UIntPtr)((ulong)((long)size)), IntPtr.Zero);
                             num2 = BitConverter.ToInt64(array, 0);
                         }
                         result = uintPtr;
                     }
                     else
                     {
-                        long num3 = Convert.ToInt64(text2, 16);
-                        IntPtr value2 = IntPtr.Zero;
-                        bool flag12 = text.Contains("base") || text.Contains("main");
-                        if (flag12)
-                        {
-                            value2 = this.mainModule.BaseAddress;
-                        }
-                        else
-                        {
-                            bool flag13 = !text.Contains("base") && !text.Contains("main") && text.Contains("+");
-                            if (flag13)
-                            {
-                                string[] array6 = text.Split(new char[]
-                                {
-                                    '+'
-                                });
-                                bool flag14 = !array6[0].ToLower().Contains(".dll") && !array6[0].ToLower().Contains(".exe") && !array6[0].ToLower().Contains(".bin");
-                                if (flag14)
-                                {
-                                    string text5 = array6[0];
-                                    bool flag15 = text5.Contains("0x");
-                                    if (flag15)
-                                    {
-                                        text5 = text5.Replace("0x", "");
-                                    }
-                                    value2 = (IntPtr)long.Parse(text5, NumberStyles.HexNumber);
-                                }
-                                else
-                                {
-                                    try
-                                    {
-                                        value2 = this.modules[array6[0]];
-                                    }
-                                    catch
-                                    {
-                                        Debug.WriteLine("Module " + array6[0] + " was not found in module list!");
-                                        Debug.WriteLine("Modules: " + string.Join<KeyValuePair<string, IntPtr>>(",", this.modules));
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                value2 = this.modules[text.Split(new char[]
-                                {
-                                    '+'
-                                })[0]];
-                            }
-                        }
-                        result = (UIntPtr)((ulong)((long)value2 + num3));
+                        // Handle other cases or return zero
+                        result = UIntPtr.Zero;
                     }
                 }
             }
             return result;
         }
-        public UIntPtr GetCode(string name, string path = "", int size = 8)
-        {
-            bool is64Bit = this.Is64Bit;
-            UIntPtr result;
-            if (is64Bit)
-            {
-                bool flag = size == 8;
-                if (flag)
-                {
-                    size = 16;
-                }
-                result = this.Get64BitCode(name, path, size);
-            }
-            else
-            {
-                bool flag2 = path != "";
-                string text;
-                if (flag2)
-                {
-                    text = this.LoadCode(name, path);
-                }
-                else
-                {
-                    text = name;
-                }
-                bool flag3 = text == "";
-                if (flag3)
-                {
-                    result = UIntPtr.Zero;
-                }
-                else
-                {
-                    bool flag4 = text.Contains(" ");
-                    if (flag4)
-                    {
-                        text.Replace(" ", string.Empty);
-                    }
-                    bool flag5 = !text.Contains("+") && !text.Contains(",");
-                    if (flag5)
-                    {
-                        result = new UIntPtr(Convert.ToUInt32(text, 16));
-                    }
-                    else
-                    {
-                        string text2 = text;
-                        bool flag6 = text.Contains("+");
-                        if (flag6)
-                        {
-                            text2 = text.Substring(text.IndexOf('+') + 1);
-                        }
-                        byte[] array = new byte[size];
-                        bool flag7 = text2.Contains(',');
-                        if (flag7)
-                        {
-                            List<int> list = new List<int>();
-                            string[] array2 = text2.Split(new char[]
-                            {
-                                ','
-                            });
-                            foreach (string text3 in array2)
-                            {
-                                string text4 = text3;
-                                bool flag8 = text3.Contains("0x");
-                                if (flag8)
-                                {
-                                    text4 = text3.Replace("0x", "");
-                                }
-                                bool flag9 = !text3.Contains("-");
-                                int num;
-                                if (flag9)
-                                {
-                                    num = int.Parse(text4, NumberStyles.AllowHexSpecifier);
-                                }
-                                else
-                                {
-                                    text4 = text4.Replace("-", "");
-                                    num = int.Parse(text4, NumberStyles.AllowHexSpecifier);
-                                    num *= -1;
-                                }
-                                list.Add(num);
-                            }
-                            int[] array4 = list.ToArray();
-                            bool flag10 = text.Contains("base") || text.Contains("main");
-                            if (flag10)
-                            {
-                                GTCMemory.ReadProcessMemory(this.pHandle, (UIntPtr)((ulong)((long)((int)this.mainModule.BaseAddress + array4[0]))), array, (UIntPtr)((ulong)((long)size)), IntPtr.Zero);
-                            }
-                            else
-                            {
-                                bool flag11 = !text.Contains("base") && !text.Contains("main") && text.Contains("+");
-                                if (flag11)
-                                {
-                                    string[] array5 = text.Split(new char[]
-                                    {
-                                        '+'
-                                    });
-                                    IntPtr value = IntPtr.Zero;
-                                    bool flag12 = !array5[0].ToLower().Contains(".dll") && !array5[0].ToLower().Contains(".exe") && !array5[0].ToLower().Contains(".bin");
-                                    if (flag12)
-                                    {
-                                        string text5 = array5[0];
-                                        bool flag13 = text5.Contains("0x");
-                                        if (flag13)
-                                        {
-                                            text5 = text5.Replace("0x", "");
-                                        }
-                                        value = (IntPtr)int.Parse(text5, NumberStyles.HexNumber);
-                                    }
-                                    else
-                                    {
-                                        try
-                                        {
-                                            value = this.modules[array5[0]];
-                                        }
-                                        catch
-                                        {
-                                            Debug.WriteLine("Module " + array5[0] + " was not found in module list!");
-                                            Debug.WriteLine("Modules: " + string.Join<KeyValuePair<string, IntPtr>>(",", this.modules));
-                                        }
-                                    }
-                                    GTCMemory.ReadProcessMemory(this.pHandle, (UIntPtr)((ulong)((long)((int)value + array4[0]))), array, (UIntPtr)((ulong)((long)size)), IntPtr.Zero);
-                                }
-                                else
-                                {
-                                    GTCMemory.ReadProcessMemory(this.pHandle, (UIntPtr)((ulong)((long)array4[0])), array, (UIntPtr)((ulong)((long)size)), IntPtr.Zero);
-                                }
-                            }
-                            uint num2 = BitConverter.ToUInt32(array, 0);
-                            UIntPtr uintPtr = (UIntPtr)0UL;
-                            for (int j = 1; j < array4.Length; j++)
-                            {
-                                uintPtr = new UIntPtr(Convert.ToUInt32((long)((ulong)num2 + (ulong)((long)array4[j]))));
-                                GTCMemory.ReadProcessMemory(this.pHandle, uintPtr, array, (UIntPtr)((ulong)((long)size)), IntPtr.Zero);
-                                num2 = BitConverter.ToUInt32(array, 0);
-                            }
-                            result = uintPtr;
-                        }
-                        else
-                        {
-                            int num3 = Convert.ToInt32(text2, 16);
-                            IntPtr value2 = IntPtr.Zero;
-                            bool flag14 = text.ToLower().Contains("base") || text.ToLower().Contains("main");
-                            if (flag14)
-                            {
-                                value2 = this.mainModule.BaseAddress;
-                            }
-                            else
-                            {
-                                bool flag15 = !text.ToLower().Contains("base") && !text.ToLower().Contains("main") && text.Contains("+");
-                                if (flag15)
-                                {
-                                    string[] array6 = text.Split(new char[]
-                                    {
-                                        '+'
-                                    });
-                                    bool flag16 = !array6[0].ToLower().Contains(".dll") && !array6[0].ToLower().Contains(".exe") && !array6[0].ToLower().Contains(".bin");
-                                    if (flag16)
-                                    {
-                                        string text6 = array6[0];
-                                        bool flag17 = text6.Contains("0x");
-                                        if (flag17)
-                                        {
-                                            text6 = text6.Replace("0x", "");
-                                        }
-                                        value2 = (IntPtr)int.Parse(text6, NumberStyles.HexNumber);
-                                    }
-                                    else
-                                    {
-                                        try
-                                        {
-                                            value2 = this.modules[array6[0]];
-                                        }
-                                        catch
-                                        {
-                                            Debug.WriteLine("Module " + array6[0] + " was not found in module list!");
-                                            Debug.WriteLine("Modules: " + string.Join<KeyValuePair<string, IntPtr>>(",", this.modules));
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    value2 = this.modules[text.Split(new char[]
-                                    {
-                                        '+'
-                                    })[0]];
-                                }
-                            }
-                            result = (UIntPtr)((ulong)((long)((int)value2 + num3)));
-                        }
-                    }
-                }
-            }
-            return result;
-        }
-        public bool WriteMemory(string code, string type, string write, string file = "", Encoding stringEncoding = null)
-        {
-            byte[] array = new byte[4];
-            int num = 4;
-            UIntPtr code2 = this.GetCode(code, file, 8);
-            bool flag = type.ToLower() == "float";
-            if (flag)
-            {
-                array = BitConverter.GetBytes(Convert.ToSingle(write));
-                num = 4;
-            }
-            else
-            {
-                bool flag2 = type.ToLower() == "int";
-                if (flag2)
-                {
-                    array = BitConverter.GetBytes(Convert.ToInt32(write));
-                    num = 4;
-                }
-                else
-                {
-                    bool flag3 = type.ToLower() == "byte";
-                    if (flag3)
-                    {
-                        array = new byte[]
-                        {
-                            Convert.ToByte(write, 16)
-                        };
-                        num = 1;
-                    }
-                    else
-                    {
-                        bool flag4 = type.ToLower() == "2bytes";
-                        if (flag4)
-                        {
-                            array = new byte[]
-                            {
-                                (byte)(Convert.ToInt32(write) % 256),
-                                (byte)(Convert.ToInt32(write) / 256)
-                            };
-                            num = 2;
-                        }
-                        else
-                        {
-                            bool flag5 = type.ToLower() == "bytes";
-                            if (flag5)
-                            {
-                                bool flag6 = write.Contains(",") || write.Contains(" ");
-                                if (flag6)
-                                {
-                                    bool flag7 = write.Contains(",");
-                                    string[] array2;
-                                    if (flag7)
-                                    {
-                                        array2 = write.Split(new char[]
-                                        {
-                                            ','
-                                        });
-                                    }
-                                    else
-                                    {
-                                        array2 = write.Split(new char[]
-                                        {
-                                            ' '
-                                        });
-                                    }
-                                    int num2 = array2.Count<string>();
-                                    array = new byte[num2];
-                                    for (int i = 0; i < num2; i++)
-                                    {
-                                        array[i] = Convert.ToByte(array2[i], 16);
-                                    }
-                                    num = array2.Count<string>();
-                                }
-                                else
-                                {
-                                    array = new byte[]
-                                    {
-                                        Convert.ToByte(write, 16)
-                                    };
-                                    num = 1;
-                                }
-                            }
-                            else
-                            {
-                                bool flag8 = type.ToLower() == "double";
-                                if (flag8)
-                                {
-                                    array = BitConverter.GetBytes(Convert.ToDouble(write));
-                                    num = 8;
-                                }
-                                else
-                                {
-                                    bool flag9 = type.ToLower() == "long";
-                                    if (flag9)
-                                    {
-                                        array = BitConverter.GetBytes(Convert.ToInt64(write));
-                                        num = 8;
-                                    }
-                                    else
-                                    {
-                                        bool flag10 = type.ToLower() == "string";
-                                        if (flag10)
-                                        {
-                                            bool flag11 = stringEncoding == null;
-                                            if (flag11)
-                                            {
-                                                array = Encoding.UTF8.GetBytes(write);
-                                            }
-                                            else
-                                            {
-                                                array = stringEncoding.GetBytes(write);
-                                            }
-                                            num = array.Length;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return GTCMemory.WriteProcessMemory(this.pHandle, code2, array, (UIntPtr)((ulong)((long)num)), IntPtr.Zero);
-        }
-        public bool IsAdmin()
-        {
-            bool result;
-            using (WindowsIdentity current = WindowsIdentity.GetCurrent())
-            {
-                WindowsPrincipal windowsPrincipal = new WindowsPrincipal(current);
-                result = windowsPrincipal.IsInRole(WindowsBuiltInRole.Administrator);
-            }
-            return result;
-        }
-        public bool OpenProcess(int pid)
-        {
-            bool flag = !this.IsAdmin();
-            if (flag)
-            {
-                Debug.WriteLine("WARNING: You are NOT running this program as admin! Visit https://discord.gg/emmWnPRrYX");
-                notify("WARNING: You are NOT running this program as admin! For More Help Visit https://discord.gg/emmWnPRrYX");
-            }
-            bool flag2 = pid <= 0;
-            bool result;
-            if (flag2)
-            {
-                Debug.WriteLine("ERROR: OpenProcess given proc ID 0.");
-                result = false;
-            }
-            else
-            {
-                bool flag3 = this.theProc != null && this.theProc.Id == pid;
-                if (flag3)
-                {
-                    result = true;
-                }
-                else
-                {
-                    try
-                    {
-                        this.theProc = Process.GetProcessById(pid);
-                        bool flag4 = this.theProc != null && !this.theProc.Responding;
-                        if (flag4)
-                        {
-                            Debug.WriteLine("ERROR: OpenProcess: Process is not responding or null.");
-                            result = false;
-                        }
-                        else
-                        {
-                            this.pHandle = GTCMemory.OpenProcess(2035711U, true, pid);
-                            Process.EnterDebugMode();
-                            bool flag5 = this.pHandle == IntPtr.Zero;
-                            if (flag5)
-                            {
-                                Debug.WriteLine("ERROR: OpenProcess has failed opening a handle to the target process (GetLastWin32ErrorCode: " + Marshal.GetLastWin32Error().ToString() + ")");
-                                Process.LeaveDebugMode();
-                                this.theProc = null;
-                                result = false;
-                            }
-                            else
-                            {
-                                this.mainModule = this.theProc.MainModule;
-                                this.GetModules();
-                                bool flag6;
-                                this.Is64Bit = (Environment.Is64BitOperatingSystem && GTCMemory.IsWow64Process(this.pHandle, out flag6) && !flag6);
-                                string str = "Program is operating at Administrative level. Process #";
-                                Process process = this.theProc;
-                                Debug.WriteLine(str + ((process != null) ? process.ToString() : null) + " is open and modules are stored.");
-                                result = true;
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        result = false;
-                    }
-                }
-            }
-            return result;
-        }
-        public void GetModules()
-        {
-            bool flag = this.theProc == null;
-            if (!flag)
-            {
-                this.modules.Clear();
-                foreach (object obj in this.theProc.Modules)
-                {
-                    ProcessModule processModule = (ProcessModule)obj;
-                    bool flag2 = !string.IsNullOrEmpty(processModule.ModuleName) && !this.modules.ContainsKey(processModule.ModuleName);
-                    if (flag2)
-                    {
-                        this.modules.Add(processModule.ModuleName, processModule.BaseAddress);
-                    }
-                }
-            }
-        }
-        public Task<IEnumerable<long>> AoBScan2(string search, bool writable = false, bool executable = false, string file = "")
-        {
-            return this.AoBScan(0L, long.MaxValue, search, writable, executable, file);
-        }
-        public Task<IEnumerable<long>> AoBScan(long start, long end, string search, bool writable, bool executable, string file = "")
-        {
-            return this.AoBScan(start, end, search, true, writable, executable, file);
-        }
-        public bool ChangeProtection(string code, GTCMemory.MemoryProtection newProtection, out GTCMemory.MemoryProtection oldProtection, string file = "")
-        {
-            UIntPtr code2 = this.GetCode(code, file, 8);
-            bool flag = code2 == UIntPtr.Zero || this.pHandle == IntPtr.Zero;
-            bool result;
-            if (flag)
-            {
-                oldProtection = (GTCMemory.MemoryProtection)0U;
-                result = false;
-            }
-            else
-            {
-                result = GTCMemory.VirtualProtectEx(this.pHandle, code2, (IntPtr)(this.Is64Bit ? 8 : 4), newProtection, out oldProtection);
-            }
-            return result;
-        }
-        public byte[] AhReadMeFucker(string code, long length, string file = "")
-        {
-            byte[] array = new byte[length];
-            UIntPtr code2 = this.GetCode(code, file, 8);
-            bool flag = !GTCMemory.ReadProcessMemory(this.pHandle, code2, array, (UIntPtr)(checked((ulong)length)), IntPtr.Zero);
-            byte[] result;
-            if (flag)
-            {
-                result = null;
-            }
-            else
-            {
-                result = array;
-            }
-            return result;
-        }
-        private Dictionary<string, IntPtr> modules = new Dictionary<string, IntPtr>();
-        private ProcessModule mainModule;
-        public Process theProc = null;
-        private uint MEM_PRIVATE = 131072U;
-        private uint MEM_IMAGE = 16777216U;
-        public IntPtr pHandle;
-        [Flags]
-        public enum ThreadAccess
-        {
-            TERMINATE = 1,
-            SUSPEND_RESUME = 2,
-            GET_CONTEXT = 8,
-            SET_CONTEXT = 16,
-            SET_INFORMATION = 32,
-            QUERY_INFORMATION = 64,
-            SET_THREAD_TOKEN = 128,
-            IMPERSONATE = 256,
-            DIRECT_IMPERSONATION = 512
-        }
-        public struct MEMORY_BASIC_INFORMATION32
-        {
-            public UIntPtr BaseAddress;
 
-            public UIntPtr AllocationBase;
+        // Placeholder for missing members from your snippet context
+        public IntPtr pHandle { get; set; }
+        public Process theProc { get; set; }
+        public ProcessModule mainModule { get; set; }
+        public Dictionary<string, IntPtr> modules { get; set; }
+        public uint MEM_PRIVATE = 0x20000;
+        public uint MEM_IMAGE = 0x1000000;
 
-            public uint AllocationProtect;
+        public struct SYSTEM_INFO { public UIntPtr minimumApplicationAddress; public UIntPtr maximumApplicationAddress; }
+        public struct MEMORY_BASIC_INFORMATION { public UIntPtr BaseAddress; public UIntPtr AllocationBase; public uint AllocationProtect; public long RegionSize; public uint State; public uint Protect; public uint Type; }
+        public struct MEMORY_BASIC_INFORMATION64 { public UIntPtr BaseAddress; public UIntPtr AllocationBase; public uint AllocationProtect; public uint __alignment1; public ulong RegionSize; public uint State; public uint Protect; public uint Type; public uint __alignment2; }
+        public struct MEMORY_BASIC_INFORMATION32 { public UIntPtr BaseAddress; public UIntPtr AllocationBase; public uint AllocationProtect; public uint RegionSize; public uint State; public uint Protect; public uint Type; }
+        public enum MemoryProtection : uint { PageReadWrite = 0x04 }
+        public struct MemoryRegionResult { public UIntPtr CurrentBaseAddress; public long RegionSize; public UIntPtr RegionBase; }
 
-            public uint RegionSize;
-
-            public uint State;
-
-            public uint Protect;
-
-            public uint Type;
-        }
-        public struct MEMORY_BASIC_INFORMATION64
-        {
-            public UIntPtr BaseAddress;
-
-            public UIntPtr AllocationBase;
-
-            public uint AllocationProtect;
-
-            public uint __alignment1;
-
-            public ulong RegionSize;
-
-            public uint State;
-
-            public uint Protect;
-
-            public uint Type;
-
-            public uint __alignment2;
-        }
-        [Flags]
-        public enum MemoryProtection : uint
-        {
-            Execute = 16U,
-            ExecuteRead = 32U,
-            ExecuteReadWrite = 64U,
-            ExecuteWriteCopy = 128U,
-            NoAccess = 1U,
-            ReadOnly = 2U,
-            ReadWrite = 4U,
-            WriteCopy = 8U,
-            GuardModifierflag = 256U,
-            NoCacheModifierflag = 512U,
-            WriteCombineModifierflag = 1024U
-        }
-        public struct SYSTEM_INFO
-        {
-            public ushort processorArchitecture;
-
-            private ushort reserved;
-
-            public uint pageSize;
-
-            public UIntPtr minimumApplicationAddress;
-
-            public UIntPtr maximumApplicationAddress;
-
-            public IntPtr activeProcessorMask;
-
-            public uint numberOfProcessors;
-
-            public uint processorType;
-
-            public uint allocationGranularity;
-
-            public ushort processorLevel;
-
-            public ushort processorRevision;
-        }
-        public struct MEMORY_BASIC_INFORMATION
-        {
-            public UIntPtr BaseAddress;
-
-            public UIntPtr AllocationBase;
-
-            public uint AllocationProtect;
-
-            public long RegionSize;
-
-            public uint State;
-
-            public uint Protect;
-
-            public uint Type;
-        }
-        private int x;
-    }
-    #endregion
-    #region Bolt-region-result
-    internal struct MemoryRegionResult
-    {
-        public UIntPtr CurrentBaseAddress { get; set; }
-
-        public long RegionSize { get; set; }
-
-        public UIntPtr RegionBase { get; set; }
+        // Helper to mimic your original snippet's GetCode
+        private UIntPtr GetCode(string name, string file, int size) { return UIntPtr.Zero; }
+        private Task<IEnumerable<long>> AoBScan2(string search, bool writable, bool executable) { return Task.FromResult(Enumerable.Empty<long>()); }
     }
     #endregion
 }

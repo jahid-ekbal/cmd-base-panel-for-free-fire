@@ -1,0 +1,2 @@
+C:\Users\jahid\OneDrive\ドキュメント\GitHub\cmd-base-panel-for-free-fire\obj\Debug\AimbotTest.csproj.AssemblyReference.cache
+C:\Users\jahid\OneDrive\ドキュメント\GitHub\cmd-base-panel-for-free-fire\obj\Debug\AimbotTest.csproj.CoreCompileInputs.cache
